@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Casa en Orden — 2026</title>
+
+  <link rel="manifest" href="./manifest.webmanifest">
+  <meta name="theme-color" content="#0b1220">
+
+  <style>
+    :root{
+      --bg:#0b1220; --card: rgba(255,255,255,.08); --card2: rgba(255,255,255,.06);
+      --stroke: rgba(255,255,255,.12); --text: rgba(255,255,255,.92); --muted: rgba(255,255,255,.65);
+      --accent:#6ee7b7; --gold:#fbbf24; --danger:#fb7185; --warn:#fbbf24; --ok:#34d399;
+      --shadow: 0 18px 60px rgba(0,0,0,.45); --r: 18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--text);
+      background:
+        radial-gradient(900px 500px at 20% 0%, rgba(110,231,183,.18), transparent 55%),
+        radial-gradient(800px 520px at 80% 10%, rgba(251,191,36,.14), transparent 55%),
+        radial-gradient(900px 600px at 60% 100%, rgba(59,130,246,.12), transparent 55%),
+        var(--bg);
+      min-height:100vh;
+      padding:18px;
+      padding-bottom:92px;
+    }
+    header{display:flex; gap:12px; align-items:center; justify-content:space-between; margin-bottom:14px;}
+    .brand{display:flex; gap:12px; align-items:center;}
+    .logo{
+      width:46px; height:46px; border-radius:16px;
+      background: linear-gradient(135deg, rgba(110,231,183,.9), rgba(251,191,36,.85));
+      box-shadow: var(--shadow);
+      display:grid; place-items:center;
+      font-weight:900; color:#0b1220;
+    }
+    .title h1{font-size:16px; margin:0}
+    .title p{margin:2px 0 0; font-size:12px; color:var(--muted)}
+    .chip{
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.06);
+      padding:8px 10px; border-radius:999px;
+      font-size:12px; color:var(--muted);
+      display:flex; align-items:center; gap:8px;
+    }
+    .chip b{color:var(--text)}
+    .grid{display:grid; gap:12px;}
+    .card{
+      background: linear-gradient(180deg, var(--card), var(--card2));
+      border:1px solid var(--stroke);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      padding:14px;
+    }
+    .section-title{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+    .section-title h2{
+      font-size:13px; margin:0; letter-spacing:.4px; text-transform:uppercase;
+      color:rgba(255,255,255,.78);
+    }
+    .btn{
+      border:none; border-radius:14px; padding:10px 12px;
+      color:#0b1220; font-weight:900;
+      background: linear-gradient(135deg, var(--accent), var(--gold));
+      cursor:pointer;
+      box-shadow: 0 16px 40px rgba(0,0,0,.35);
+    }
+    .btn.secondary{
+      color:var(--text);
+      background: rgba(255,255,255,.08);
+      border:1px solid var(--stroke);
+      box-shadow:none;
+      font-weight:800;
+    }
+    .btn.small{padding:8px 10px; border-radius:12px; font-size:12px}
+    .form{display:grid; gap:10px; grid-template-columns: 1fr 1fr;}
+    .form .full{grid-column: 1 / -1}
+    label{font-size:12px; color:var(--muted)}
+    input, select, textarea{
+      width:100%;
+      margin-top:6px;
+      padding:10px 12px;
+      border-radius:14px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      color:var(--text);
+      outline:none;
+    }
+    .hint{font-size:12px; color:var(--muted); margin-top:6px}
+    .divider{height:1px; background:rgba(255,255,255,.10); margin:12px 0}
+    .tabs{
+      position:fixed; left:0; right:0; bottom:0;
+      padding:12px 14px;
+      background: rgba(8,12,20,.68);
+      backdrop-filter: blur(16px);
+      border-top:1px solid rgba(255,255,255,.10);
+      display:flex; gap:10px; justify-content:space-between;
+    }
+    .tab{
+      flex:1;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+      color:var(--muted);
+      border-radius:16px;
+      padding:10px 10px;
+      display:flex; flex-direction:column; align-items:center; gap:4px;
+      font-size:11px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .tab.active{
+      color:var(--text);
+      border-color: rgba(110,231,183,.35);
+      background: rgba(110,231,183,.10);
+    }
+    .tab span{font-size:18px; line-height:1}
+    .hidden{display:none}
+    .kpis{display:grid; grid-template-columns: 1fr 1fr; gap:12px;}
+    .kpi .label{font-size:12px; color:var(--muted)}
+    .kpi .value{font-size:20px; font-weight:900; letter-spacing:.2px}
+    .kpi .sub{font-size:11px; color:var(--muted); margin-top:2px}
+    .badge{
+      font-size:11px; padding:6px 10px; border-radius:999px;
+      border:1px solid var(--stroke); background: rgba(255,255,255,.06); color:var(--muted);
+      display:inline-flex; gap:8px; align-items:center;
+    }
+    .badge .dot{width:8px;height:8px;border-radius:99px;background:var(--warn)}
+    .badge.ok .dot{background:var(--ok)}
+    .badge.warn .dot{background:var(--warn)}
+    .badge.danger .dot{background:var(--danger)}
+    .list{display:grid; gap:10px}
+    .item{
+      padding:12px; border-radius:16px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+    }
+    .item .top{display:flex; justify-content:space-between; gap:12px; align-items:flex-start}
+    .item .name{font-weight:900}
+    .item .meta{font-size:12px; color:var(--muted); margin-top:2px}
+    .money{font-weight:900}
+    .verse{
+      border-left:3px solid rgba(251,191,36,.85);
+      padding-left:10px;
+      margin-top:8px;
+      color:rgba(255,255,255,.88);
+      font-size:14px;
+      line-height:1.35;
+    }
+    .verse small{display:block; color:var(--muted); margin-top:6px}
+    .error{color:#ffd1d1}
+    @media (min-width: 900px){
+      body{max-width: 920px; margin:0 auto}
+      .kpis{grid-template-columns: 1fr 1fr 1fr 1fr}
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">CO</div>
+      <div class="title">
+        <h1>Casa en Orden — 2026</h1>
+        <p><b>Jhon & Daniela</b> • Sincronizado • Con fe</p>
+      </div>
+    </div>
+    <div class="chip"><span>📅</span><b id="nowDate"></b></div>
+  </header>
+
+  <!-- LOGIN -->
+  <section id="view-login" class="grid">
+    <div class="card">
+      <div class="section-title"><h2>Iniciar sesión</h2></div>
+      <div class="form">
+        <div class="full">
+          <label>Correo</label>
+          <input id="email" type="email" placeholder="correo@..." />
+        </div>
+        <div class="full">
+          <label>Contraseña</label>
+          <input id="password" type="password" placeholder="••••••••" />
+        </div>
+        <div class="full">
+          <label>Código del hogar (compartido)</label>
+          <input id="familyId" placeholder="Ej: JHON-DANIELA-2026" />
+          <div class="hint">Pongan el mismo código en ambos iPhones. Ese código une su “hogar” y sincroniza todo.</div>
+        </div>
+        <div class="full" style="display:flex; gap:10px; justify-content:flex-end">
+          <button class="btn secondary" id="btnLogin">Entrar</button>
+          <button class="btn" id="btnJoin">Unir / Crear hogar ✅</button>
+        </div>
+        <div id="loginMsg" class="hint error"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="view-dashboard" class="grid hidden">
+    <div class="card">
+      <div class="section-title">
+        <h2>Resumen del mes</h2>
+        <span id="mood" class="badge warn"><span class="dot"></span><span id="moodText">Ajustando</span></span>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi"><div class="label">Ingresos</div><div class="value" id="kpiIncome">₡0</div><div class="sub">Mes actual</div></div>
+        <div class="kpi"><div class="label">Gastos</div><div class="value" id="kpiExpense">₡0</div><div class="sub">Mes actual</div></div>
+        <div class="kpi"><div class="label">Ahorro</div><div class="value" id="kpiSaving">₡0</div><div class="sub">Mes actual</div></div>
+        <div class="kpi"><div class="label">Balance</div><div class="value" id="kpiBalance">₡0</div><div class="sub">Ingresos - (Gastos + Ahorro)</div></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section-title">
+        <h2>Versículo del día</h2>
+        <button class="btn small secondary" id="btnNewVerse">🔄 Cambiar</button>
+      </div>
+      <div class="verse" id="verseBox"></div>
+
+      <div class="divider"></div>
+
+      <div class="section-title">
+        <h2>Sesión</h2>
+        <button class="btn small secondary" id="btnLogout">Cerrar sesión</button>
+      </div>
+      <div class="hint" id="sessionInfo"></div>
+    </div>
+  </section>
+
+  <!-- MOVIMIENTOS -->
+  <section id="view-movs" class="grid hidden">
+    <div class="card">
+      <div class="section-title"><h2>Registrar movimiento</h2></div>
+      <div class="form">
+        <div>
+          <label>Tipo</label>
+          <select id="movType">
+            <option value="income">Ingreso</option>
+            <option value="expense">Gasto</option>
+            <option value="saving">Ahorro</option>
+          </select>
+        </div>
+        <div>
+          <label>Quién lo registró</label>
+          <select id="movWho">
+            <option>Jhon</option>
+            <option>Daniela</option>
+            <option>Ambos</option>
+          </select>
+        </div>
+        <div class="full">
+          <label>Categoría</label>
+          <select id="movCat"></select>
+        </div>
+        <div>
+          <label>Monto (₡)</label>
+          <input id="movAmt" inputmode="numeric" placeholder="Ej: 25000" />
+        </div>
+        <div>
+          <label>Fecha</label>
+          <input id="movDate" type="date" />
+        </div>
+        <div class="full">
+          <label>Nota (opcional)</label>
+          <input id="movNote" placeholder="Ej: supermercado, gasolina..." />
+        </div>
+        <div class="full" style="display:flex; gap:10px; justify-content:flex-end">
+          <button class="btn secondary" id="btnClearMov">Limpiar</button>
+          <button class="btn" id="btnAddMov">Guardar ✅</button>
+        </div>
+      </div>
+      <div class="hint" id="syncMsg"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><h2>Últimos movimientos</h2></div>
+      <div id="movList" class="list"></div>
+    </div>
+  </section>
+
+  <!-- NAV -->
+  <nav class="tabs" aria-label="Navegación">
+    <div class="tab active" data-view="dashboard"><span>🏠</span>Inicio</div>
+    <div class="tab" data-view="movs"><span>➕</span>Movs</div>
+    <div class="tab" data-view="login"><span>🔐</span>Cuenta</div>
+  </nav>
+
+  <script type="module">
+    // Firebase CDN imports (NO uses "firebase/app" imports)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+    // ✅ TU firebaseConfig (ya pegado)
+    const firebaseConfig = {
+      apiKey: "AIzaSyD66AHEnPDx0Htet7ehfg0VDYlVpMcBrs0",
+      authDomain: "jhon-y-daniela.firebaseapp.com",
+      projectId: "jhon-y-daniela",
+      storageBucket: "jhon-y-daniela.firebasestorage.app",
+      messagingSenderId: "606835713606",
+      appId: "1:606835713606:web:8c85b00cf05d81dfe50c47"
+    };
+
+    // Init
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Helpers
+    const fmtCRC = new Intl.NumberFormat('es-CR', { style:'currency', currency:'CRC', maximumFractionDigits:0 });
+    const $ = (id)=>document.getElementById(id);
+    const todayISO = ()=> new Date().toISOString().slice(0,10);
+    const monthKey = (dISO)=> (dISO||todayISO()).slice(0,7);
+    const safeNum = (v)=> {
+      const n = Number(String(v||'').replace(/[^\d.-]/g,''));
+      return Number.isFinite(n) ? n : 0;
+    };
+    const uid = ()=> Math.random().toString(16).slice(2)+Date.now().toString(16);
+
+    // Views
+    const views = {
+      login: $('view-login'),
+      dashboard: $('view-dashboard'),
+      movs: $('view-movs')
+    };
+    function go(viewName){
+      Object.entries(views).forEach(([k,el])=> el.classList.toggle('hidden', k!==viewName));
+      document.querySelectorAll('.tab').forEach(t=> t.classList.toggle('active', t.dataset.view===viewName));
+    }
+    document.querySelectorAll('.tab').forEach(t=> t.addEventListener('click', ()=> go(t.dataset.view)));
+
+    // Data model in Firestore:
+    // families/{familyId} => { members:[uid1,uid2], state:{...}, updatedAt }
+    const defaultState = {
+      couple: "Jhon & Daniela",
+      purpose: "Este 2026 administramos con sabiduría lo que Dios nos confía. Caminamos en unidad, con paz, sin ansiedad, y con disciplina para honrar a Dios, cubrir nuestra casa y avanzar hacia nuestras metas.",
+      movs: [],
+      customVerses: []
+    };
+
+    let familyId = "";
+    let unsub = null;
+    let state = structuredClone(defaultState);
+
+    function setLoginMsg(msg){ $('loginMsg').textContent = msg || ""; }
+    function setSyncMsg(msg){ $('syncMsg').textContent = msg || ""; }
+
+    // Verses
+    const generalVerses = [
+      "Mateo 6:33 — Busquen primero el reino de Dios y su justicia, y todo lo demás vendrá por añadidura.",
+      "Proverbios 21:5 — Los planes del diligente llevan a la abundancia; todo el que se apresura acaba en pobreza.",
+      "Proverbios 3:9-10 — Honra al Señor con tus bienes… y tus graneros se llenarán.",
+      "Filipenses 4:19 — Mi Dios suplirá todo lo que les falte conforme a sus riquezas en gloria.",
+      "Salmo 37:5 — Encomienda al Señor tu camino; confía en Él, y Él actuará."
+    ];
+    function allVerses(){
+      const custom = (state.customVerses||[]).filter(Boolean);
+      return [...custom, ...generalVerses];
+    }
+    function pickVerse(){
+      const list = allVerses();
+      const i = Math.floor(Math.random()*list.length);
+      return list[i] || generalVerses[0];
+    }
+    function formatVerse(v){
+      const parts = v.split('—');
+      if(parts.length >= 2){
+        const ref = parts[0].trim();
+        const text = parts.slice(1).join('—').trim();
+        return `${escapeHtml(text)}<small>${escapeHtml(ref)}</small>`;
+      }
+      return `${escapeHtml(v)}<small>Versículo</small>`;
+    }
+
+    // Categories
+    const CATS = {
+      income: ["Salario", "Extra", "Negocio", "Bonificación", "Otro"],
+      expense: ["Vivienda", "Servicios", "Alimentación", "Transporte", "Educación", "Salud", "Deudas", "Compras", "Salidas", "Imprevistos", "Otro"],
+      saving: ["Fondo de emergencia", "Viajes", "Deuda (abono extra)", "Inversión", "Otro"]
+    };
+    function refreshCatOptions(){
+      const type = $('movType').value;
+      $('movCat').innerHTML = CATS[type].map(c=>`<option>${c}</option>`).join('');
+    }
+
+    // KPIs
+    function sumMovs(filterFn){
+      return (state.movs||[]).filter(filterFn).reduce((a,m)=>a + safeNum(m.amt), 0);
+    }
+    function calcMonth(mk){
+      const income = sumMovs(m=>m.type==='income' && monthKey(m.date)===mk);
+      const expense = sumMovs(m=>m.type==='expense' && monthKey(m.date)===mk);
+      const saving = sumMovs(m=>m.type==='saving' && monthKey(m.date)===mk);
+      return { income, expense, saving, balance: income-(expense+saving) };
+    }
+    function moodFrom(balance){
+      const badge = $('mood'); const txt = $('moodText');
+      badge.classList.remove('ok','warn','danger');
+      let mode='warn', label='Ajustando';
+      if(balance>=0){ mode='ok'; label='En paz'; }
+      if(balance<0){ mode='danger'; label='Alerta'; }
+      badge.classList.add(mode); txt.textContent = label;
+    }
+
+    function renderDashboard(){
+      const mk = monthKey(todayISO());
+      const m = calcMonth(mk);
+      $('kpiIncome').textContent = fmtCRC.format(m.income);
+      $('kpiExpense').textContent = fmtCRC.format(m.expense);
+      $('kpiSaving').textContent = fmtCRC.format(m.saving);
+      $('kpiBalance').textContent = fmtCRC.format(m.balance);
+      moodFrom(m.balance);
+      $('verseBox').innerHTML = formatVerse(pickVerse());
+      $('sessionInfo').textContent = `Hogar: ${familyId || '(no definido)'} • Usuario: ${auth.currentUser?.email || ''}`;
+    }
+
+    function renderMovs(){
+      const list = $('movList');
+      const last = (state.movs||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,12);
+      if(!last.length){ list.innerHTML = `<div class="hint">Aún no hay movimientos.</div>`; return; }
+      list.innerHTML = last.map(m=>{
+        const icon = m.type==='income'?'💚':(m.type==='expense'?'💸':'💰');
+        const label = m.type==='income'?'Ingreso':(m.type==='expense'?'Gasto':'Ahorro');
+        return `
+          <div class="item">
+            <div class="top">
+              <div>
+                <div class="name">${icon} ${label} — ${escapeHtml(m.cat||'')}</div>
+                <div class="meta">${escapeHtml(m.date||'')} • ${escapeHtml(m.who||'')}${m.note?' • '+escapeHtml(m.note):''}</div>
+              </div>
+              <div class="money">${fmtCRC.format(safeNum(m.amt))}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderAll(){
+      renderDashboard();
+      renderMovs();
+    }
+
+    // Firestore sync
+    async function ensureFamilyDoc(fid){
+      const user = auth.currentUser;
+      if(!user) throw new Error("No hay sesión.");
+      const ref = doc(db, "families", fid);
+      const snap = await getDoc(ref);
+
+      if(!snap.exists()){
+        await setDoc(ref, {
+          members: [user.uid],
+          state: structuredClone(defaultState),
+          updatedAt: serverTimestamp()
+        });
+        return;
+      }
+
+      const data = snap.data();
+      const members = Array.isArray(data.members) ? data.members : [];
+      if(!members.includes(user.uid)){
+        members.push(user.uid);
+        await setDoc(ref, { members, updatedAt: serverTimestamp() }, { merge:true });
+      }
+    }
+
+    function subscribeFamily(fid){
+      if(unsub) unsub();
+      const ref = doc(db, "families", fid);
+      unsub = onSnapshot(ref, (snap)=>{
+        if(!snap.exists()){
+          setSyncMsg("No existe el hogar. Usa 'Unir / Crear hogar'.");
+          return;
+        }
+        const data = snap.data();
+        state = { ...structuredClone(defaultState), ...(data.state||{}) };
+        setSyncMsg("Sincronizado ✅");
+        renderAll();
+      }, (err)=>{
+        setSyncMsg("Error de sincronización: " + (err?.message || err));
+      });
+    }
+
+    async function saveState(){
+      if(!familyId) return;
+      const ref = doc(db, "families", familyId);
+      await setDoc(ref, { state, updatedAt: serverTimestamp() }, { merge:true });
+    }
+
+    // Auth flow
+    $('btnLogin').addEventListener('click', async ()=>{
+      try{
+        setLoginMsg("");
+        await signInWithEmailAndPassword(auth, $('email').value.trim(), $('password').value);
+        setLoginMsg("Sesión iniciada. Ahora pulsa “Unir / Crear hogar”.");
+      }catch(e){
+        setLoginMsg("Error: " + (e?.message || e));
+      }
+    });
+
+    $('btnJoin').addEventListener('click', async ()=>{
+      try{
+        setLoginMsg("");
+        const fid = ($('familyId').value || '').trim();
+        if(!fid){ setLoginMsg("Escribe un código del hogar (Ej: JHON-DANIELA-2026)."); return; }
+        if(!auth.currentUser){ setLoginMsg("Primero inicia sesión con correo y contraseña."); return; }
+
+        familyId = fid;
+        await ensureFamilyDoc(familyId);
+        subscribeFamily(familyId);
+
+        go('dashboard');
+      }catch(e){
+        setLoginMsg("Error: " + (e?.message || e));
+      }
+    });
+
+    $('btnLogout').addEventListener('click', async ()=>{
+      try{
+        if(unsub) unsub();
+        unsub = null;
+        familyId = "";
+        await signOut(auth);
+        go('login');
+      }catch(e){
+        alert("Error: " + (e?.message || e));
+      }
+    });
+
+    // Mov actions
+    $('movDate').value = todayISO();
+    refreshCatOptions();
+    $('movType').addEventListener('change', refreshCatOptions);
+
+    $('btnAddMov').addEventListener('click', async ()=>{
+      try{
+        const type = $('movType').value;
+        const who = $('movWho').value;
+        const cat = $('movCat').value;
+        const amt = safeNum($('movAmt').value);
+        const date = $('movDate').value || todayISO();
+        const note = $('movNote').value || '';
+        if(amt <= 0){ alert("Escribe un monto mayor a 0."); return; }
+
+        state.movs = Array.isArray(state.movs) ? state.movs : [];
+        state.movs.push({ id: uid(), type, who, cat, amt, date, note });
+
+        await saveState();
+        $('movAmt').value=''; $('movNote').value='';
+        setSyncMsg("Guardado y sincronizado ✅");
+      }catch(e){
+        setSyncMsg("Error al guardar: " + (e?.message || e));
+      }
+    });
+
+    $('btnClearMov').addEventListener('click', ()=>{
+      $('movAmt').value=''; $('movNote').value=''; $('movDate').value=todayISO();
+    });
+
+    $('btnNewVerse').addEventListener('click', renderAll);
+
+    // Keep session
+    onAuthStateChanged(auth, (user)=>{
+      if(user){
+        go('login');
+        setLoginMsg("Sesión activa. Escribe el código del hogar y pulsa “Unir / Crear hogar”.");
+      }else{
+        go('login');
+      }
+    });
+
+    // Date header
+    $('nowDate').textContent = new Date().toLocaleDateString('es-CR', {
+      weekday:'short', year:'numeric', month:'short', day:'numeric'
+    });
+
+    function escapeHtml(s){
+      return String(s||'')
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#039;");
+    }
+
+    // PWA service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    }
+  </script>
+</body>
+</html>
