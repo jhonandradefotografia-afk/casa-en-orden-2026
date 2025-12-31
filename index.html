@@ -195,20 +195,6 @@
         <div id="loginMsg" class="hint error"></div>
       </div>
     </div>
-    <h2>🏠 Hogar</h2>
-
-<input
-  id="homeCode"
-  placeholder="Código del hogar (ej: JHON-DANIELA-2026)"
-  style="width:100%;padding:12px;border-radius:12px;margin:10px 0"
-/>
-
-<button
-  onclick="joinOrCreateHome(document.getElementById('homeCode').value)"
-  style="width:100%;padding:14px;border-radius:14px;background:#6ee7b7;color:#022c22;font-weight:bold"
->
-  Unir / Crear hogar
-</button>
   </section>
 
   <!-- DASHBOARD -->
@@ -303,12 +289,11 @@
   </nav>
 
   <script type="module">
-    // Firebase CDN imports (NO uses "firebase/app" imports)
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-    // ✅ TU firebaseConfig (ya pegado)
+    // ✅ TU firebaseConfig
     const firebaseConfig = {
       apiKey: "AIzaSyD66AHEnPDx0Htet7ehfg0VDYlVpMcBrs0",
       authDomain: "jhon-y-daniela.firebaseapp.com",
@@ -346,7 +331,7 @@
     }
     document.querySelectorAll('.tab').forEach(t=> t.addEventListener('click', ()=> go(t.dataset.view)));
 
-    // Data model in Firestore:
+    // Firestore model:
     // families/{familyId} => { members:[uid1,uid2], state:{...}, updatedAt }
     const defaultState = {
       couple: "Jhon & Daniela",
@@ -361,6 +346,11 @@
 
     function setLoginMsg(msg){ $('loginMsg').textContent = msg || ""; }
     function setSyncMsg(msg){ $('syncMsg').textContent = msg || ""; }
+
+    // Guardar/leer último hogar usado
+    const HOME_KEY = "casaEnOrden_familyId";
+    function saveFamilyLocal(fid){ localStorage.setItem(HOME_KEY, fid); }
+    function loadFamilyLocal(){ return localStorage.getItem(HOME_KEY) || ""; }
 
     // Verses
     const generalVerses = [
@@ -397,7 +387,7 @@
     };
     function refreshCatOptions(){
       const type = $('movType').value;
-      $('movCat').innerHTML = CATS[type].map(c=>`<option>${c}</option>`).join('');
+      $('movCat').innerHTML = CATS[type].map(c=>`<option>${escapeHtml(c)}</option>`).join('');
     }
 
     // KPIs
@@ -427,14 +417,21 @@
       $('kpiSaving').textContent = fmtCRC.format(m.saving);
       $('kpiBalance').textContent = fmtCRC.format(m.balance);
       moodFrom(m.balance);
+
+      // Versículo (random)
       $('verseBox').innerHTML = formatVerse(pickVerse());
+
       $('sessionInfo').textContent = `Hogar: ${familyId || '(no definido)'} • Usuario: ${auth.currentUser?.email || ''}`;
     }
 
     function renderMovs(){
       const list = $('movList');
-      const last = (state.movs||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,12);
+      const last = (state.movs||[]).slice()
+        .sort((a,b)=>(String(b.date||'').localeCompare(String(a.date||''))))
+        .slice(0,12);
+
       if(!last.length){ list.innerHTML = `<div class="hint">Aún no hay movimientos.</div>`; return; }
+
       list.innerHTML = last.map(m=>{
         const icon = m.type==='income'?'💚':(m.type==='expense'?'💸':'💰');
         const label = m.type==='income'?'Ingreso':(m.type==='expense'?'Gasto':'Ahorro');
@@ -484,6 +481,7 @@
     function subscribeFamily(fid){
       if(unsub) unsub();
       const ref = doc(db, "families", fid);
+
       unsub = onSnapshot(ref, (snap)=>{
         if(!snap.exists()){
           setSyncMsg("No existe el hogar. Usa 'Unir / Crear hogar'.");
@@ -509,7 +507,7 @@
       try{
         setLoginMsg("");
         await signInWithEmailAndPassword(auth, $('email').value.trim(), $('password').value);
-        setLoginMsg("Sesión iniciada. Ahora pulsa “Unir / Crear hogar”.");
+        setLoginMsg("Sesión iniciada. Ahora pulsa “Unir / Crear hogar ✅”.");
       }catch(e){
         setLoginMsg("Error: " + (e?.message || e));
       }
@@ -523,6 +521,8 @@
         if(!auth.currentUser){ setLoginMsg("Primero inicia sesión con correo y contraseña."); return; }
 
         familyId = fid;
+        saveFamilyLocal(fid);
+
         await ensureFamilyDoc(familyId);
         subscribeFamily(familyId);
 
@@ -551,6 +551,8 @@
 
     $('btnAddMov').addEventListener('click', async ()=>{
       try{
+        if(!familyId){ alert("Primero une/crea el hogar."); return; }
+
         const type = $('movType').value;
         const who = $('movWho').value;
         const cat = $('movCat').value;
@@ -580,7 +582,11 @@
     onAuthStateChanged(auth, (user)=>{
       if(user){
         go('login');
-        setLoginMsg("Sesión activa. Escribe el código del hogar y pulsa “Unir / Crear hogar”.");
+        // Autorelleno del hogar si ya se usó antes
+        const prev = loadFamilyLocal();
+        if(prev && !$('familyId').value) $('familyId').value = prev;
+
+        setLoginMsg("Sesión activa. Escribe el código del hogar y pulsa “Unir / Crear hogar ✅”.");
       }else{
         go('login');
       }
@@ -604,103 +610,6 @@
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').catch(()=>{});
     }
-    // =============== HOGAR (Crear / Unirse) ===============
-
-// Normaliza el código del hogar (mayúsculas y sin espacios raros)
-function normalizeHomeCode(code) {
-  return (code || "")
-    .trim()
-    .toUpperCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^A-Z0-9\-]/g, "");
-}
-
-// Lee el código del hogar desde cualquiera de tus inputs (por si tienes 2)
-function readHomeCode() {
-  const a = document.getElementById("homeCode")?.value || "";
-  const b = document.getElementById("homeCodeLogin")?.value || "";
-  return (a.trim() ? a : b).trim();
-}
-
-// Guarda el homeId en memoria local
-function setHomeLocal(homeId) {
-  localStorage.setItem("homeId", homeId);
-}
-function getHomeLocal() {
-  return localStorage.getItem("homeId");
-}
-
-// HAZ LA FUNCIÓN GLOBAL para que el onclick del botón la encuentre
-window.joinOrCreateHome = async (codeFromButton) => {
-  try {
-    const codeRaw = (codeFromButton || readHomeCode());
-    const homeId = normalizeHomeCode(codeRaw);
-
-    if (!homeId) {
-      alert("Por favor escribe el código del hogar. Ej: JHON-DANIELA-2026");
-      return;
-    }
-
-    const user = auth.currentUser;
-    if (!user) {
-      alert("Primero inicia sesión con tu correo y contraseña.");
-      return;
-    }
-
-    // 1) Crear/actualizar doc del hogar
-    const homeRef = doc(db, "homes", homeId);
-    await setDoc(
-      homeRef,
-      {
-        homeId,
-        displayName: "Jhon & Daniela",
-        year: 2026,
-        updatedAt: serverTimestamp(),
-        createdAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
-
-    // 2) Registrar miembro dentro del hogar
-    const memberRef = doc(db, "homes", homeId, "members", user.uid);
-    await setDoc(
-      memberRef,
-      {
-        uid: user.uid,
-        email: user.email || "",
-        joinedAt: serverTimestamp(),
-        role: "member",
-      },
-      { merge: true }
-    );
-
-    // 3) Guardar en el perfil del usuario cuál es su hogar
-    const userRef = doc(db, "users", user.uid);
-    await setDoc(
-      userRef,
-      {
-        uid: user.uid,
-        email: user.email || "",
-        homeId,
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
-
-    setHomeLocal(homeId);
-
-    alert(`✅ Listo. Hogar activo: ${homeId}`);
-
-    // Si ya tienes funciones que recargan dashboard, llámalas aquí:
-    // loadDashboardForHome(homeId);
-    // loadModules(homeId);
-
-  } catch (err) {
-    console.error(err);
-    alert("Error al unir/crear hogar. Revisa consola (F12) → Console.");
-  }
-};
-
   </script>
 </body>
 </html>
