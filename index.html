@@ -67,6 +67,7 @@
       background: linear-gradient(135deg, var(--accent), var(--gold));
       cursor:pointer;
       box-shadow: 0 16px 40px rgba(0,0,0,.35);
+      user-select:none;
     }
     .btn.secondary{
       color:var(--text);
@@ -177,15 +178,15 @@
       <div class="form">
         <div class="full">
           <label>Correo</label>
-          <input id="email" type="email" placeholder="correo@..." autocomplete="email" />
+          <input id="email" type="email" placeholder="correo@..." />
         </div>
         <div class="full">
           <label>Contraseña</label>
-          <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
+          <input id="password" type="password" placeholder="••••••••" />
         </div>
         <div class="full">
           <label>Código del hogar (compartido)</label>
-          <input id="familyId" placeholder="Ej: JHON-DANIELA-2026" autocapitalize="characters" />
+          <input id="familyId" placeholder="Ej: JHON-DANIELA-2026" />
           <div class="hint">Pongan el mismo código en ambos iPhones. Ese código une su “hogar” y sincroniza todo.</div>
         </div>
         <div class="full" style="display:flex; gap:10px; justify-content:flex-end">
@@ -213,80 +214,6 @@
       </div>
 
       <div class="divider"></div>
-<div class="section-title">
-  <h2>Metas 2026</h2>
-  <span class="hint">Progreso automático según tus movimientos</span>
-</div>
-
-<div class="kpis" style="grid-template-columns: 1fr; gap:12px">
-  <!-- Emergencia -->
-  <div class="item">
-    <div class="top">
-      <div>
-        <div class="name">💰 Fondo de Emergencia</div>
-        <div class="meta">Suma de Ahorro categoría: “Fondo de emergencia”</div>
-      </div>
-      <div class="money" id="goalEmergencyNow">₡0</div>
-    </div>
-
-    <div class="hint" style="margin-top:8px">
-      Meta: <b id="goalEmergencyTargetLbl">₡0</b>
-    </div>
-    <input id="goalEmergencyTarget" inputmode="numeric" placeholder="Meta (₡) ej: 500000" />
-    <button class="btn small" id="btnSaveEmergency">Guardar meta</button>
-
-    <div class="hint" style="margin-top:8px">
-      <progress id="goalEmergencyBar" value="0" max="100" style="width:100%"></progress>
-      <div class="hint" id="goalEmergencyPct">0%</div>
-    </div>
-  </div>
-
-  <!-- Viajes -->
-  <div class="item">
-    <div class="top">
-      <div>
-        <div class="name">✈️ Viajes</div>
-        <div class="meta">Suma de Ahorro categoría: “Viajes”</div>
-      </div>
-      <div class="money" id="goalTripsNow">₡0</div>
-    </div>
-
-    <div class="hint" style="margin-top:8px">
-      Meta: <b id="goalTripsTargetLbl">₡0</b>
-    </div>
-    <input id="goalTripsTarget" inputmode="numeric" placeholder="Meta (₡) ej: 800000" />
-    <button class="btn small" id="btnSaveTrips">Guardar meta</button>
-
-    <div class="hint" style="margin-top:8px">
-      <progress id="goalTripsBar" value="0" max="100" style="width:100%"></progress>
-      <div class="hint" id="goalTripsPct">0%</div>
-    </div>
-  </div>
-
-  <!-- Deuda -->
-  <div class="item">
-    <div class="top">
-      <div>
-        <div class="name">💳 Deuda</div>
-        <div class="meta">Suma de Gastos categoría: “Deudas” (pagos)</div>
-      </div>
-      <div class="money" id="goalDebtNow">₡0</div>
-    </div>
-
-    <div class="hint" style="margin-top:8px">
-      Meta a pagar: <b id="goalDebtTargetLbl">₡0</b>
-    </div>
-    <input id="goalDebtTarget" inputmode="numeric" placeholder="Meta (₡) ej: 1500000" />
-    <button class="btn small" id="btnSaveDebt">Guardar meta</button>
-
-    <div class="hint" style="margin-top:8px">
-      <progress id="goalDebtBar" value="0" max="100" style="width:100%"></progress>
-      <div class="hint" id="goalDebtPct">0%</div>
-    </div>
-  </div>
-</div>
-
-<div class="divider"></div>
 
       <div class="section-title">
         <h2>Versículo del día</h2>
@@ -367,6 +294,7 @@
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
+    // ✅ TU firebaseConfig
     const firebaseConfig = {
       apiKey: "AIzaSyD66AHEnPDx0Htet7ehfg0VDYlVpMcBrs0",
       authDomain: "jhon-y-daniela.firebaseapp.com",
@@ -376,10 +304,15 @@
       appId: "1:606835713606:web:8c85b00cf05d81dfe50c47"
     };
 
+    // Init
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
+    // 🔐 PIN editar/eliminar
+    const EDIT_PIN = "0206";
+
+    // Helpers
     const fmtCRC = new Intl.NumberFormat('es-CR', { style:'currency', currency:'CRC', maximumFractionDigits:0 });
     const $ = (id)=>document.getElementById(id);
     const todayISO = ()=> new Date().toISOString().slice(0,10);
@@ -390,15 +323,7 @@
     };
     const uid = ()=> Math.random().toString(16).slice(2)+Date.now().toString(16);
 
-    // Normaliza el código del hogar (lo dejamos consistente)
-    function normalizeFamilyId(fid){
-      return (fid||'')
-        .trim()
-        .toUpperCase()
-        .replace(/\s+/g,'-')
-        .replace(/[^A-Z0-9\-]/g,'');
-    }
-
+    // Views
     const views = {
       login: $('view-login'),
       dashboard: $('view-dashboard'),
@@ -410,18 +335,14 @@
     }
     document.querySelectorAll('.tab').forEach(t=> t.addEventListener('click', ()=> go(t.dataset.view)));
 
-  const defaultState = {
-  couple: "Jhon & Daniela",
-  purpose: "Este 2026 administramos con sabiduría lo que Dios nos confía. Caminamos en unidad, con paz, sin ansiedad, y con disciplina para honrar a Dios, cubrir nuestra casa y avanzar hacia nuestras metas.",
-  movs: [],
-  customVerses: [],
-  goals: {
-    emergencyTarget: 0,
-    tripsTarget: 0,
-    debtTarget: 0
-  }
-};
-
+    // Firestore model:
+    // families/{familyId} => { members:[uid1,uid2], state:{...}, updatedAt }
+    const defaultState = {
+      couple: "Jhon & Daniela",
+      purpose: "Este 2026 administramos con sabiduría lo que Dios nos confía. Caminamos en unidad, con paz, sin ansiedad, y con disciplina para honrar a Dios, cubrir nuestra casa y avanzar hacia nuestras metas.",
+      movs: [],
+      customVerses: []
+    };
 
     let familyId = "";
     let unsub = null;
@@ -430,10 +351,12 @@
     function setLoginMsg(msg){ $('loginMsg').textContent = msg || ""; }
     function setSyncMsg(msg){ $('syncMsg').textContent = msg || ""; }
 
+    // Guardar/leer último hogar usado
     const HOME_KEY = "casaEnOrden_familyId";
     function saveFamilyLocal(fid){ localStorage.setItem(HOME_KEY, fid); }
     function loadFamilyLocal(){ return localStorage.getItem(HOME_KEY) || ""; }
 
+    // Verses
     const generalVerses = [
       "Mateo 6:33 — Busquen primero el reino de Dios y su justicia, y todo lo demás vendrá por añadidura.",
       "Proverbios 21:5 — Los planes del diligente llevan a la abundancia; todo el que se apresura acaba en pobreza.",
@@ -460,6 +383,7 @@
       return `${escapeHtml(v)}<small>Versículo</small>`;
     }
 
+    // Categories
     const CATS = {
       income: ["Salario", "Extra", "Negocio", "Bonificación", "Otro"],
       expense: ["Vivienda", "Servicios", "Alimentación", "Transporte", "Educación", "Salud", "Deudas", "Compras", "Salidas", "Imprevistos", "Otro"],
@@ -470,6 +394,7 @@
       $('movCat').innerHTML = CATS[type].map(c=>`<option>${escapeHtml(c)}</option>`).join('');
     }
 
+    // KPIs
     function sumMovs(filterFn){
       return (state.movs||[]).filter(filterFn).reduce((a,m)=>a + safeNum(m.amt), 0);
     }
@@ -496,15 +421,16 @@
       $('kpiSaving').textContent = fmtCRC.format(m.saving);
       $('kpiBalance').textContent = fmtCRC.format(m.balance);
       moodFrom(m.balance);
+
       $('verseBox').innerHTML = formatVerse(pickVerse());
       $('sessionInfo').textContent = `Hogar: ${familyId || '(no definido)'} • Usuario: ${auth.currentUser?.email || ''}`;
-    renderGoals2026();
-}
+    }
 
+    // ✅ Movimientos + Editar/Eliminar con PIN
     function renderMovs(){
       const list = $('movList');
       const last = (state.movs||[]).slice()
-        .sort((a,b)=>(String(b.date||'').localeCompare(String(a.date||''))))
+        .sort((a,b)=> (String(b.date||'').localeCompare(String(a.date||''))))
         .slice(0,12);
 
       if(!last.length){ list.innerHTML = `<div class="hint">Aún no hay movimientos.</div>`; return; }
@@ -512,18 +438,64 @@
       list.innerHTML = last.map(m=>{
         const icon = m.type==='income'?'💚':(m.type==='expense'?'💸':'💰');
         const label = m.type==='income'?'Ingreso':(m.type==='expense'?'Gasto':'Ahorro');
+
         return `
-          <div class="item">
+          <div class="item" data-id="${escapeHtml(m.id)}">
             <div class="top">
               <div>
                 <div class="name">${icon} ${label} — ${escapeHtml(m.cat||'')}</div>
                 <div class="meta">${escapeHtml(m.date||'')} • ${escapeHtml(m.who||'')}${m.note?' • '+escapeHtml(m.note):''}</div>
               </div>
-              <div class="money">${fmtCRC.format(safeNum(m.amt))}</div>
+
+              <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end">
+                <div class="money">${fmtCRC.format(safeNum(m.amt))}</div>
+                <div style="display:flex; gap:8px">
+                  <button class="btn small secondary" data-edit="${escapeHtml(m.id)}">✏️ Editar</button>
+                  <button class="btn small secondary" data-del="${escapeHtml(m.id)}">🗑️ Eliminar</button>
+                </div>
+              </div>
             </div>
           </div>
         `;
       }).join('');
+
+      // Eliminar
+      list.querySelectorAll('[data-del]').forEach(btn=>{
+        btn.addEventListener('click', async ()=>{
+          const pin = prompt("PIN para eliminar:");
+          if(pin !== EDIT_PIN){ alert("PIN incorrecto."); return; }
+
+          const id = btn.getAttribute('data-del');
+          state.movs = (state.movs||[]).filter(x => x.id !== id);
+          await saveState();
+          setSyncMsg("Eliminado ✅");
+        });
+      });
+
+      // Editar
+      list.querySelectorAll('[data-edit]').forEach(btn=>{
+        btn.addEventListener('click', async ()=>{
+          const pin = prompt("PIN para editar:");
+          if(pin !== EDIT_PIN){ alert("PIN incorrecto."); return; }
+
+          const id = btn.getAttribute('data-edit');
+          const m = (state.movs||[]).find(x => x.id === id);
+          if(!m) return;
+
+          $('movType').value = m.type || 'income';
+          refreshCatOptions();
+          $('movCat').value = m.cat || $('movCat').value;
+          $('movWho').value = m.who || $('movWho').value;
+          $('movAmt').value = m.amt ?? '';
+          $('movDate').value = m.date || todayISO();
+          $('movNote').value = m.note || '';
+
+          state.__editingId = id;
+          $('btnAddMov').textContent = "Actualizar ✅";
+          go('movs');
+          setSyncMsg("Editando… cambia y toca Actualizar ✅");
+        });
+      });
     }
 
     function renderAll(){
@@ -531,6 +503,7 @@
       renderMovs();
     }
 
+    // Firestore sync
     async function ensureFamilyDoc(fid){
       const user = auth.currentUser;
       if(!user) throw new Error("No hay sesión.");
@@ -578,6 +551,7 @@
       await setDoc(ref, { state, updatedAt: serverTimestamp() }, { merge:true });
     }
 
+    // Auth flow
     $('btnLogin').addEventListener('click', async ()=>{
       try{
         setLoginMsg("");
@@ -591,11 +565,7 @@
     $('btnJoin').addEventListener('click', async ()=>{
       try{
         setLoginMsg("");
-
-        const raw = ($('familyId').value || '').trim();
-        const fid = normalizeFamilyId(raw);
-        $('familyId').value = fid;
-
+        const fid = ($('familyId').value || '').trim();
         if(!fid){ setLoginMsg("Escribe un código del hogar (Ej: JHON-DANIELA-2026)."); return; }
         if(!auth.currentUser){ setLoginMsg("Primero inicia sesión con correo y contraseña."); return; }
 
@@ -623,6 +593,7 @@
       }
     });
 
+    // Mov actions
     $('movDate').value = todayISO();
     refreshCatOptions();
     $('movType').addEventListener('change', refreshCatOptions);
@@ -640,11 +611,23 @@
         if(amt <= 0){ alert("Escribe un monto mayor a 0."); return; }
 
         state.movs = Array.isArray(state.movs) ? state.movs : [];
-        state.movs.push({ id: uid(), type, who, cat, amt, date, note });
+
+        const editingId = state.__editingId;
+        if(editingId){
+          const idx = state.movs.findIndex(x => x.id === editingId);
+          if(idx >= 0){
+            state.movs[idx] = { ...state.movs[idx], type, who, cat, amt, date, note };
+          }
+          state.__editingId = null;
+          $('btnAddMov').textContent = "Guardar ✅";
+        } else {
+          state.movs.push({ id: uid(), type, who, cat, amt, date, note });
+        }
 
         await saveState();
         $('movAmt').value=''; $('movNote').value='';
         setSyncMsg("Guardado y sincronizado ✅");
+        renderAll();
       }catch(e){
         setSyncMsg("Error al guardar: " + (e?.message || e));
       }
@@ -652,10 +635,13 @@
 
     $('btnClearMov').addEventListener('click', ()=>{
       $('movAmt').value=''; $('movNote').value=''; $('movDate').value=todayISO();
+      state.__editingId = null;
+      $('btnAddMov').textContent = "Guardar ✅";
     });
 
     $('btnNewVerse').addEventListener('click', renderAll);
 
+    // Keep session
     onAuthStateChanged(auth, (user)=>{
       if(user){
         go('login');
@@ -667,6 +653,7 @@
       }
     });
 
+    // Date header
     $('nowDate').textContent = new Date().toLocaleDateString('es-CR', {
       weekday:'short', year:'numeric', month:'short', day:'numeric'
     });
@@ -680,85 +667,10 @@
         .replaceAll("'","&#039;");
     }
 
+    // PWA service worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').catch(()=>{});
-    }function sumYearBy(type, cat){
-  const y = String(new Date().getFullYear());
-  return (state.movs||[])
-    .filter(m => String(m.date||'').startsWith(y))
-    .filter(m => m.type === type && String(m.cat||'') === cat)
-    .reduce((a,m)=> a + safeNum(m.amt), 0);
-}
-
-function fmt0(n){ return fmtCRC.format(Number(n||0)); }
-
-function pct(now, target){
-  const t = Number(target||0);
-  if(t<=0) return 0;
-  return Math.max(0, Math.min(100, Math.round((Number(now||0)/t)*100)));
-}
-
-function renderGoals2026(){
-  state.goals = state.goals || { emergencyTarget:0, tripsTarget:0, debtTarget:0 };
-
-  const emergencyNow = sumYearBy('saving', 'Fondo de emergencia');
-  const tripsNow = sumYearBy('saving', 'Viajes');
-  const debtNow = sumYearBy('expense', 'Deudas');
-
-  const eT = safeNum(state.goals.emergencyTarget);
-  const tT = safeNum(state.goals.tripsTarget);
-  const dT = safeNum(state.goals.debtTarget);
-
-  $('goalEmergencyNow').textContent = fmt0(emergencyNow);
-  $('goalTripsNow').textContent = fmt0(tripsNow);
-  $('goalDebtNow').textContent = fmt0(debtNow);
-
-  $('goalEmergencyTargetLbl').textContent = fmt0(eT);
-  $('goalTripsTargetLbl').textContent = fmt0(tT);
-  $('goalDebtTargetLbl').textContent = fmt0(dT);
-
-  if(!$('goalEmergencyTarget').value) $('goalEmergencyTarget').value = eT ? String(eT) : "";
-  if(!$('goalTripsTarget').value) $('goalTripsTarget').value = tT ? String(tT) : "";
-  if(!$('goalDebtTarget').value) $('goalDebtTarget').value = dT ? String(dT) : "";
-
-  const ep = pct(emergencyNow, eT);
-  const tp = pct(tripsNow, tT);
-  const dp = pct(debtNow, dT);
-
-  $('goalEmergencyBar').value = ep;
-  $('goalTripsBar').value = tp;
-  $('goalDebtBar').value = dp;
-
-  $('goalEmergencyPct').textContent = `${ep}%`;
-  $('goalTripsPct').textContent = `${tp}%`;
-  $('goalDebtPct').textContent = `${dp}%`;
-}
-
-// Botones guardar metas (ojo: deben existir en el HTML)
-$('btnSaveEmergency')?.addEventListener('click', async ()=>{
-  state.goals = state.goals || {};
-  state.goals.emergencyTarget = safeNum($('goalEmergencyTarget').value);
-  await saveState();
-  renderGoals2026();
-  setSyncMsg("Meta de Emergencia guardada ✅");
-});
-
-$('btnSaveTrips')?.addEventListener('click', async ()=>{
-  state.goals = state.goals || {};
-  state.goals.tripsTarget = safeNum($('goalTripsTarget').value);
-  await saveState();
-  renderGoals2026();
-  setSyncMsg("Meta de Viajes guardada ✅");
-});
-
-$('btnSaveDebt')?.addEventListener('click', async ()=>{
-  state.goals = state.goals || {};
-  state.goals.debtTarget = safeNum($('goalDebtTarget').value);
-  await saveState();
-  renderGoals2026();
-  setSyncMsg("Meta de Deuda guardada ✅");
-});
-
+    }
   </script>
 </body>
 </html>
