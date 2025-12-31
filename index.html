@@ -604,7 +604,105 @@
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').catch(()=>{});
     }
+    // =============== HOGAR (Crear / Unirse) ===============
+
+// Normaliza el código del hogar (mayúsculas y sin espacios raros)
+function normalizeHomeCode(code) {
+  return (code || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^A-Z0-9\-]/g, "");
+}
+
+// Lee el código del hogar desde cualquiera de tus inputs (por si tienes 2)
+function readHomeCode() {
+  const a = document.getElementById("homeCode")?.value || "";
+  const b = document.getElementById("homeCodeLogin")?.value || "";
+  return (a.trim() ? a : b).trim();
+}
+
+// Guarda el homeId en memoria local
+function setHomeLocal(homeId) {
+  localStorage.setItem("homeId", homeId);
+}
+function getHomeLocal() {
+  return localStorage.getItem("homeId");
+}
+
+// HAZ LA FUNCIÓN GLOBAL para que el onclick del botón la encuentre
+window.joinOrCreateHome = async (codeFromButton) => {
+  try {
+    const codeRaw = (codeFromButton || readHomeCode());
+    const homeId = normalizeHomeCode(codeRaw);
+
+    if (!homeId) {
+      alert("Por favor escribe el código del hogar. Ej: JHON-DANIELA-2026");
+      return;
+    }
+
+    const user = auth.currentUser;
+    if (!user) {
+      alert("Primero inicia sesión con tu correo y contraseña.");
+      return;
+    }
+
+    // 1) Crear/actualizar doc del hogar
+    const homeRef = doc(db, "homes", homeId);
+    await setDoc(
+      homeRef,
+      {
+        homeId,
+        displayName: "Jhon & Daniela",
+        year: 2026,
+        updatedAt: serverTimestamp(),
+        createdAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    // 2) Registrar miembro dentro del hogar
+    const memberRef = doc(db, "homes", homeId, "members", user.uid);
+    await setDoc(
+      memberRef,
+      {
+        uid: user.uid,
+        email: user.email || "",
+        joinedAt: serverTimestamp(),
+        role: "member",
+      },
+      { merge: true }
+    );
+
+    // 3) Guardar en el perfil del usuario cuál es su hogar
+    const userRef = doc(db, "users", user.uid);
+    await setDoc(
+      userRef,
+      {
+        uid: user.uid,
+        email: user.email || "",
+        homeId,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    setHomeLocal(homeId);
+
+    alert(`✅ Listo. Hogar activo: ${homeId}`);
+
+    // Si ya tienes funciones que recargan dashboard, llámalas aquí:
+    // loadDashboardForHome(homeId);
+    // loadModules(homeId);
+
+  } catch (err) {
+    console.error(err);
+    alert("Error al unir/crear hogar. Revisa consola (F12) → Console.");
+  }
+};
+
   </script>
 </body>
 </html>
+
 
