@@ -213,6 +213,80 @@
       </div>
 
       <div class="divider"></div>
+<div class="section-title">
+  <h2>Metas 2026</h2>
+  <span class="hint">Progreso automático según tus movimientos</span>
+</div>
+
+<div class="kpis" style="grid-template-columns: 1fr; gap:12px">
+  <!-- Emergencia -->
+  <div class="item">
+    <div class="top">
+      <div>
+        <div class="name">💰 Fondo de Emergencia</div>
+        <div class="meta">Suma de Ahorro categoría: “Fondo de emergencia”</div>
+      </div>
+      <div class="money" id="goalEmergencyNow">₡0</div>
+    </div>
+
+    <div class="hint" style="margin-top:8px">
+      Meta: <b id="goalEmergencyTargetLbl">₡0</b>
+    </div>
+    <input id="goalEmergencyTarget" inputmode="numeric" placeholder="Meta (₡) ej: 500000" />
+    <button class="btn small" id="btnSaveEmergency">Guardar meta</button>
+
+    <div class="hint" style="margin-top:8px">
+      <progress id="goalEmergencyBar" value="0" max="100" style="width:100%"></progress>
+      <div class="hint" id="goalEmergencyPct">0%</div>
+    </div>
+  </div>
+
+  <!-- Viajes -->
+  <div class="item">
+    <div class="top">
+      <div>
+        <div class="name">✈️ Viajes</div>
+        <div class="meta">Suma de Ahorro categoría: “Viajes”</div>
+      </div>
+      <div class="money" id="goalTripsNow">₡0</div>
+    </div>
+
+    <div class="hint" style="margin-top:8px">
+      Meta: <b id="goalTripsTargetLbl">₡0</b>
+    </div>
+    <input id="goalTripsTarget" inputmode="numeric" placeholder="Meta (₡) ej: 800000" />
+    <button class="btn small" id="btnSaveTrips">Guardar meta</button>
+
+    <div class="hint" style="margin-top:8px">
+      <progress id="goalTripsBar" value="0" max="100" style="width:100%"></progress>
+      <div class="hint" id="goalTripsPct">0%</div>
+    </div>
+  </div>
+
+  <!-- Deuda -->
+  <div class="item">
+    <div class="top">
+      <div>
+        <div class="name">💳 Deuda</div>
+        <div class="meta">Suma de Gastos categoría: “Deudas” (pagos)</div>
+      </div>
+      <div class="money" id="goalDebtNow">₡0</div>
+    </div>
+
+    <div class="hint" style="margin-top:8px">
+      Meta a pagar: <b id="goalDebtTargetLbl">₡0</b>
+    </div>
+    <input id="goalDebtTarget" inputmode="numeric" placeholder="Meta (₡) ej: 1500000" />
+    <button class="btn small" id="btnSaveDebt">Guardar meta</button>
+
+    <div class="hint" style="margin-top:8px">
+      <progress id="goalDebtBar" value="0" max="100" style="width:100%"></progress>
+      <div class="hint" id="goalDebtPct">0%</div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
 
       <div class="section-title">
         <h2>Versículo del día</h2>
@@ -605,4 +679,5 @@
   </script>
 </body>
 </html>
+
 
