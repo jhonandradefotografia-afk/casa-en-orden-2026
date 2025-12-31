@@ -177,15 +177,15 @@
       <div class="form">
         <div class="full">
           <label>Correo</label>
-          <input id="email" type="email" placeholder="correo@..." />
+          <input id="email" type="email" placeholder="correo@..." autocomplete="email" />
         </div>
         <div class="full">
           <label>Contraseña</label>
-          <input id="password" type="password" placeholder="••••••••" />
+          <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
         </div>
         <div class="full">
           <label>Código del hogar (compartido)</label>
-          <input id="familyId" placeholder="Ej: JHON-DANIELA-2026" />
+          <input id="familyId" placeholder="Ej: JHON-DANIELA-2026" autocapitalize="characters" />
           <div class="hint">Pongan el mismo código en ambos iPhones. Ese código une su “hogar” y sincroniza todo.</div>
         </div>
         <div class="full" style="display:flex; gap:10px; justify-content:flex-end">
@@ -293,7 +293,6 @@
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-    // ✅ TU firebaseConfig
     const firebaseConfig = {
       apiKey: "AIzaSyD66AHEnPDx0Htet7ehfg0VDYlVpMcBrs0",
       authDomain: "jhon-y-daniela.firebaseapp.com",
@@ -303,12 +302,10 @@
       appId: "1:606835713606:web:8c85b00cf05d81dfe50c47"
     };
 
-    // Init
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Helpers
     const fmtCRC = new Intl.NumberFormat('es-CR', { style:'currency', currency:'CRC', maximumFractionDigits:0 });
     const $ = (id)=>document.getElementById(id);
     const todayISO = ()=> new Date().toISOString().slice(0,10);
@@ -319,7 +316,15 @@
     };
     const uid = ()=> Math.random().toString(16).slice(2)+Date.now().toString(16);
 
-    // Views
+    // Normaliza el código del hogar (lo dejamos consistente)
+    function normalizeFamilyId(fid){
+      return (fid||'')
+        .trim()
+        .toUpperCase()
+        .replace(/\s+/g,'-')
+        .replace(/[^A-Z0-9\-]/g,'');
+    }
+
     const views = {
       login: $('view-login'),
       dashboard: $('view-dashboard'),
@@ -331,8 +336,6 @@
     }
     document.querySelectorAll('.tab').forEach(t=> t.addEventListener('click', ()=> go(t.dataset.view)));
 
-    // Firestore model:
-    // families/{familyId} => { members:[uid1,uid2], state:{...}, updatedAt }
     const defaultState = {
       couple: "Jhon & Daniela",
       purpose: "Este 2026 administramos con sabiduría lo que Dios nos confía. Caminamos en unidad, con paz, sin ansiedad, y con disciplina para honrar a Dios, cubrir nuestra casa y avanzar hacia nuestras metas.",
@@ -347,12 +350,10 @@
     function setLoginMsg(msg){ $('loginMsg').textContent = msg || ""; }
     function setSyncMsg(msg){ $('syncMsg').textContent = msg || ""; }
 
-    // Guardar/leer último hogar usado
     const HOME_KEY = "casaEnOrden_familyId";
     function saveFamilyLocal(fid){ localStorage.setItem(HOME_KEY, fid); }
     function loadFamilyLocal(){ return localStorage.getItem(HOME_KEY) || ""; }
 
-    // Verses
     const generalVerses = [
       "Mateo 6:33 — Busquen primero el reino de Dios y su justicia, y todo lo demás vendrá por añadidura.",
       "Proverbios 21:5 — Los planes del diligente llevan a la abundancia; todo el que se apresura acaba en pobreza.",
@@ -379,7 +380,6 @@
       return `${escapeHtml(v)}<small>Versículo</small>`;
     }
 
-    // Categories
     const CATS = {
       income: ["Salario", "Extra", "Negocio", "Bonificación", "Otro"],
       expense: ["Vivienda", "Servicios", "Alimentación", "Transporte", "Educación", "Salud", "Deudas", "Compras", "Salidas", "Imprevistos", "Otro"],
@@ -390,7 +390,6 @@
       $('movCat').innerHTML = CATS[type].map(c=>`<option>${escapeHtml(c)}</option>`).join('');
     }
 
-    // KPIs
     function sumMovs(filterFn){
       return (state.movs||[]).filter(filterFn).reduce((a,m)=>a + safeNum(m.amt), 0);
     }
@@ -417,10 +416,7 @@
       $('kpiSaving').textContent = fmtCRC.format(m.saving);
       $('kpiBalance').textContent = fmtCRC.format(m.balance);
       moodFrom(m.balance);
-
-      // Versículo (random)
       $('verseBox').innerHTML = formatVerse(pickVerse());
-
       $('sessionInfo').textContent = `Hogar: ${familyId || '(no definido)'} • Usuario: ${auth.currentUser?.email || ''}`;
     }
 
@@ -454,7 +450,6 @@
       renderMovs();
     }
 
-    // Firestore sync
     async function ensureFamilyDoc(fid){
       const user = auth.currentUser;
       if(!user) throw new Error("No hay sesión.");
@@ -502,7 +497,6 @@
       await setDoc(ref, { state, updatedAt: serverTimestamp() }, { merge:true });
     }
 
-    // Auth flow
     $('btnLogin').addEventListener('click', async ()=>{
       try{
         setLoginMsg("");
@@ -516,7 +510,11 @@
     $('btnJoin').addEventListener('click', async ()=>{
       try{
         setLoginMsg("");
-        const fid = ($('familyId').value || '').trim();
+
+        const raw = ($('familyId').value || '').trim();
+        const fid = normalizeFamilyId(raw);
+        $('familyId').value = fid;
+
         if(!fid){ setLoginMsg("Escribe un código del hogar (Ej: JHON-DANIELA-2026)."); return; }
         if(!auth.currentUser){ setLoginMsg("Primero inicia sesión con correo y contraseña."); return; }
 
@@ -544,7 +542,6 @@
       }
     });
 
-    // Mov actions
     $('movDate').value = todayISO();
     refreshCatOptions();
     $('movType').addEventListener('change', refreshCatOptions);
@@ -578,21 +575,17 @@
 
     $('btnNewVerse').addEventListener('click', renderAll);
 
-    // Keep session
     onAuthStateChanged(auth, (user)=>{
       if(user){
         go('login');
-        // Autorelleno del hogar si ya se usó antes
         const prev = loadFamilyLocal();
         if(prev && !$('familyId').value) $('familyId').value = prev;
-
         setLoginMsg("Sesión activa. Escribe el código del hogar y pulsa “Unir / Crear hogar ✅”.");
       }else{
         go('login');
       }
     });
 
-    // Date header
     $('nowDate').textContent = new Date().toLocaleDateString('es-CR', {
       weekday:'short', year:'numeric', month:'short', day:'numeric'
     });
@@ -606,12 +599,10 @@
         .replaceAll("'","&#039;");
     }
 
-    // PWA service worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').catch(()=>{});
     }
   </script>
 </body>
 </html>
-
 
